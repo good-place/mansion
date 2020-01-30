@@ -32,6 +32,7 @@
         (assert (array? ra) "Records are not found")
         (assert (all |(array? $) ra) "Records are not in sets")
         (assert (all (fn [set] (find |(= ($ :name) "Pepe") set)) ra) "Record is not in both sets")
+        #@todo make this with optional param to find-all too then it will be with ids only
         (def ru (mu/union (:find-all s {:job "Programmer" :name "Pepe"})))
         (assert ru "Sets are not in union")
         (assert (= (length ru) 3) "Not all records are not unioned")

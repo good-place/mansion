@@ -12,7 +12,7 @@
           (def batch (t/batch/create))
           (:put batch "counter" "0")
           (loop [i :in (self :to-index)]
-            (:put batch (string i "-0000000000000000") "\0"))
+            (:put batch (string i "-0000000000000000-0") "\0"))
           (:_write self batch)
           (:destroy batch)))
 
@@ -32,6 +32,7 @@
     (:put batch "counter" id)
     (:put batch id md)
     # @fixme this is very naive
+    # key field-hash-id?
     (loop [f :in (self :to-index)
            :let [d (get data f)
                  mf (:_make-index self f d)
