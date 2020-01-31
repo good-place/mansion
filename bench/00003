@@ -1,0 +1,6 @@
+Start with 10000 records
+Save records in 0.254652
+Retrieve 5000 ids in 0.006102
+Populate 5000 records from iterator in 0.027384
+Populate 5000 records from store in 0.042323
+Manualy retrieve 5000 records in 0.040629

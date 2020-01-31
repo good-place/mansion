@@ -6,12 +6,13 @@
 (def recs 10000)
 
 (defer (t/manage/destroy db-name)
-  (with [s (ms/create db-name [:name :job :pet])]
+  (with [s (ms/create db-name @{:to-index [:name :job :pet]})]
     (var n (os/clock))
     (defn start-clock [] (set n (os/clock)))
     (defn wall-time [] (- (os/clock) n))
     (printf "Start with %i records" recs)
-    (for i 0 recs (:save s {:name (string "Joker-" i) :job (if (odd? i) "Programmer" "Gardener")}))
+    (with [batch (t/batch/create) |(:write s $)]
+      (for i 0 recs (:save s {:name (string "Joker-" i) :job (if (odd? i) "Programmer" "Gardener")} batch)))
     (printf "Save records in %f" (- (os/clock) n))
     (start-clock)
     (def ids (:find-by s :job "Programmer"))

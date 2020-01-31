@@ -15,7 +15,7 @@
     (:put batch
           (string i (string/repeat "0" (+ (* (self :hash-count) 2) 1)))
            "\0"))
-  (:_write self batch)
+  (:write self batch)
   (:destroy batch)
   self)
 
@@ -26,38 +26,47 @@
   (put self :hash-count (unmarshal (:get db "hash-count")))
   (put self :to-index (unmarshal (:get db "to-index")))
   (put self :ctx (:get db "ctx"))
-  (:_write self batch)
+  (:write self batch)
   (:destroy batch)
   self)
 
-(defn close [self]
+(defn- close [self]
   (:close (self :db)))
 
 (defn- _get [self id]
-   (-?> (:get (self :db) id) (unmarshal)))
+  (assert (string? id))
+  (-?> (:get (self :db) id) (unmarshal)))
 
-(defn- _write [self batch]
-   (:write batch (self :db)))
+(defn- write [self batch]
+  (assert (= (type batch) :tahani/batch))
+  (:write batch (self :db))
+  (:destroy batch))
 
-(defn- save [self data]
-  (let [md (freeze (marshal data))
-        id (-> (self :db) (:get "counter") (scan-number) (inc) (string))
-        batch (t/batch/create)]
-    (:put batch "counter" id)
+(defn- save [self data &opt batch]
+  (var own-batch? (not batch))
+  (default batch (t/batch/create))
+  (assert (struct? data))
+  (assert (= (type batch) :tahani/batch))
+  (def id (-> (self :db) (:get "counter") (scan-number) (inc) (string)))
+  (:put (self :db) "counter" id)
+  (let [md (freeze (marshal data))]
     (:put batch id md)
     (each f (self :to-index)
-      (if-let [d (get data f)]
+      (when-let [d (get data f)]
         (let [mf (:_make-index self f d)
               start (string mf "0")]
           (unless (:get (self :db) start) (:put batch start d))
           (:put batch (string mf id) "\0"))))
-    (:_write self batch)
-    (:destroy batch)
+    (when own-batch? (:write self batch))
     id))
 
-(defn- load [self id] (:_get self id))
+(defn- load [self id]
+  (assert (string? id))
+  (:_get self id))
 
 (defn- find-by [self field term &opt populate?]
+  (assert (keyword? field))
+  (assert (string? term))
   (assert (find |(= $ field) (self :to-index)))
   (default populate? false)
   (def ids @[])
@@ -84,7 +93,7 @@
     :_db nil
     :_make-index _make-index
     :_get _get
-    :_write _write
+    :write write
     :_create _create
     :_open _open
     :close close
@@ -92,15 +101,18 @@
     :load load
     :find-by find-by})
 
-(defn create [name &opt to-index]
+(defn create [name &opt store]
+  (default store @{:to-index []})
   (assert (string? name))
-  (assert (and (tuple? to-index) (all |(keyword? $) to-index)))
-  (default to-index [])
+  (assert (table? store))
+  (assert (and (tuple? (store :to-index))
+               (all |(keyword? $) (store :to-index))))
   (:_create
-   (-> @{}
+   (-> store
        (table/setproto Store)
-       (merge-into {:name name :to-index to-index}))))
+       (put :name name))))
 
 (defn open [name]
+  (assert (string? name))
   (:_open
    (-> @{} (table/setproto Store) (put :name name))))
