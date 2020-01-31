@@ -6,6 +6,7 @@
 (import ../mansion/utils :as mu)
 
 (start-suite 0)
+
 (def db-name "peopletest")
 
 (defer (t/manage/destroy db-name)
@@ -35,6 +36,9 @@
     (def rsl (:find-by s :name "Pepe" :load))
     (assert (= (length rsl) 2) "Not all records are found by find-by with iterator population")
     (assert (deep= rsl @[{:name "Pepe" :job "Programmer" :pet "Cat"} {:name "Pepe" :job "Gardener" :pet "Dog"}]) "Not right records found")
+    (:close s)
+    (def os (ms/open db-name))
+    (:close os)
 ))
 
 (end-suite)
