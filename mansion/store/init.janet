@@ -49,22 +49,18 @@
   (let [ids @[]
         mf (:_make-index self field term)
         start (string mf "-0")
-        iter (t/iterator/create (self :db))]
+        iter (t/iterator/create (self :db))
+        id-start (+ (length field) (* 2 (self :hash-count)) 1)]
     (:seek iter start)
     (when (:valid? iter)
       (while (:valid? iter)
         (:next iter)
         (def k (:key iter))
-        (if (string/has-prefix? mf (:key iter))
-          (array/push ids (last (string/split "-" k)))
-          (break)))
+        (if-let [id (and (string/has-prefix? mf k) (string/slice k id-start))]
+          (array/push ids id) (break)))
       (case populate?
-        :iter
-        (seq [id :in ids]
-             (:seek iter id)
-             (unmarshal (:value iter)))
-        :load
-        (seq [id :in ids] (:load self id))
+        :iter (seq [id :in ids] (:seek iter id) (unmarshal (:value iter)))
+        :load (seq [id :in ids] (:load self id))
         ids))))
 
 (def Store
