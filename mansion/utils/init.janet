@@ -1,6 +1,6 @@
 (import jhydro :as j)
 
-(defn hash2hex [data ctx] (freeze (j/util/bin2hex (j/hash/hash 16 data ctx))))
+(defn hash2hex [data ctx hash-count] (freeze (j/util/bin2hex (j/hash/hash hash-count data ctx))))
 
 (defn union [sets]
   (def head (first sets))
