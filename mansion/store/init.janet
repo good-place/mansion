@@ -42,13 +42,22 @@
   (:write batch (self :db))
   (:destroy batch))
 
-(defn- save [self data &opt batch]
+(defn- save [self data-or-tuple &opt batch]
   (var own-batch? (not batch))
-  (default batch (t/batch/create))
+  (var id "")
+  (var data {})
+  (if (tuple? data-or-tuple)
+    (do
+     (set id (first data-or-tuple))
+     (set data (last data-or-tuple)))
+    (do
+     (set id (-> (self :db) (:get "counter") (scan-number) (inc) (string)))
+     (set data data-or-tuple)
+     (:put (self :db) "counter" id)))
+  (assert (string? id))
   (assert (struct? data))
+  (default batch (t/batch/create))
   (assert (= (type batch) :tahani/batch))
-  (def id (-> (self :db) (:get "counter") (scan-number) (inc) (string)))
-  (:put (self :db) "counter" id)
   (let [md (freeze (marshal data))]
     (:put batch id md)
     (each f (self :to-index)

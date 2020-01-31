@@ -34,12 +34,16 @@
     (assert (deep= rsi @[{:name "Pepe" :job "Programmer" :pet "Cat"} {:name "Pepe" :job "Gardener" :pet "Dog"}]) "Not right records found")
     (def rsl (:find-by s :name "Pepe" :load))
     (assert (= (length rsl) 2) "Not all records are found by find-by with iterator population")
-    (assert (deep= rsl @[{:name "Pepe" :job "Programmer" :pet "Cat"} {:name "Pepe" :job "Gardener" :pet "Dog"}]) "Not right records found"))
+    (assert (deep= rsl @[{:name "Pepe" :job "Programmer" :pet "Cat"}
+                         {:name "Pepe" :job "Gardener" :pet "Dog"}])
+            "Not right records found")
+    (:save s ["1" {:name "Pepek" :job "Programmer" :pet "Cat"}])
+    (assert (= ((:load s "1") :name) "Pepek") "Record not updated"))
   (with [os (ms/open db-name)]
     (assert (:load os "1") "First record is not in opened db")
     (def rsi (:find-by os :name "Pepe" :iter))
     (assert (= (length rsi) 2) "Not all records are found by find-by with iterator population")
-    (assert (deep= rsi @[{:name "Pepe" :job "Programmer" :pet "Cat"} {:name "Pepe" :job "Gardener" :pet "Dog"}]) "Not right records found")))
+    (assert (deep= rsi @[{:name "Pepek" :job "Programmer" :pet "Cat"} {:name "Pepe" :job "Gardener" :pet "Dog"}]) "Not right records found")))
 
 (end-suite)
 

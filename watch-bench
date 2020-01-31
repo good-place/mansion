@@ -1,3 +1,3 @@
 #!/bin/sh
 
-fd '(janet)|(c)' . | entr -s "sleep 1; and janet bench/store.janet"
+fd '(janet)|(c)' . | entr -s "janet bench/store.janet"
