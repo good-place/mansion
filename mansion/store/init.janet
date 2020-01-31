@@ -2,7 +2,7 @@
 (import mansion/utils :as u)
 
 (defn- _make-index [self field data]
-  (string field "-" (u/hash2hex data (self :ctx))))
+  (string field (u/hash2hex data (self :ctx) (self :hash-count))))
 
 (defn- _open [self]
   (put self :db (t/open (self :name))))
@@ -11,8 +11,6 @@
   (unless (:_get self "counter")
           (def batch (t/batch/create))
           (:put batch "counter" "0")
-          (loop [i :in (self :to-index)]
-            (:put batch (string i "-0000000000000000-0") "\0"))
           (:_write self batch)
           (:destroy batch)))
 
@@ -31,30 +29,47 @@
         batch (t/batch/create)]
     (:put batch "counter" id)
     (:put batch id md)
-    # @fixme this is very naive
-    # key field-hash-id?
-    (loop [f :in (self :to-index)
-           :let [d (get data f)
-                 mf (:_make-index self f d)
-                 index (array/push (or (:_get self mf) @[d]) id)]]
-      (:put batch mf (freeze (marshal index))))
+    (each f (self :to-index)
+      (if-let [d (get data f)]
+        (let [mf (:_make-index self f d)
+              start (string mf "-0")]
+          (unless (:get (self :db) start) (:put batch start "\0"))
+          (:put batch (string mf "-" id) "\0"))))
     (:_write self batch)
     (:destroy batch)
     id))
 
 (defn- load [self id] (:_get self id))
 
-(defn- find-by [self field term]
+(defn- find-by [self field term &opt populate?]
   (assert (find |(= $ field) (self :to-index)))
-  (seq [id :in (array/slice (:_get self (:_make-index self field term)) 1 -1)] (:_get self id)))
-
-(defn- find-all [self query]
-  (seq [[k v] :pairs query] (:find-by self k v)))
+  (default populate? false)
+  (let [ids @[]
+        mf (:_make-index self field term)
+        start (string mf "-0")
+        iter (t/iterator/create (self :db))]
+    (:seek iter start)
+    (when (:valid? iter)
+      (while (:valid? iter)
+        (:next iter)
+        (def k (:key iter))
+        (if (string/has-prefix? mf (:key iter))
+          (array/push ids (last (string/split "-" k)))
+          (break)))
+      (case populate?
+        :iter
+        (seq [id :in ids]
+             (:seek iter id)
+             (unmarshal (:value iter)))
+        :load
+        (seq [id :in ids] (:load self id))
+        ids))))
 
 (def Store
   @{:name nil
     :to-index nil
     :ctx "-tahani-"
+    :hash-count 16
     :_db nil
     :_make-index _make-index
     :_get _get
@@ -64,8 +79,7 @@
     :close close
     :save save
     :load load
-    :find-by find-by
-    :find-all find-all})
+    :find-by find-by})
 
 (defn create [name &opt to-index]
   (default to-index [])
