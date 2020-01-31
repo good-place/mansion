@@ -11,8 +11,6 @@
   (unless (:_get self "counter")
           (def batch (t/batch/create))
           (:put batch "counter" "0")
-          (loop [i :in (self :to-index)]
-            (:put batch (string i "-0000000000000000-0") "\0"))
           (:_write self batch)
           (:destroy batch)))
 
@@ -56,11 +54,16 @@
       (while (:valid? iter)
         (:next iter)
         (def k (:key iter))
-        (if-let [id (and (string/has-prefix? mf k) (string/slice k id-start))]
-          (array/push ids id) (break)))
+        (if (string/has-prefix? mf (:key iter))
+          (array/push ids (last (string/split "-" k)))
+          (break)))
       (case populate?
-        :iter (seq [id :in ids] (:seek iter id) (unmarshal (:value iter)))
-        :load (seq [id :in ids] (:load self id))
+        :iter
+        (seq [id :in ids]
+             (:seek iter id)
+             (unmarshal (:value iter)))
+        :load
+        (seq [id :in ids] (:load self id))
         ids))))
 
 (def Store
