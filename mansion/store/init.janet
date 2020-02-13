@@ -1,6 +1,9 @@
 (import tahani :as t)
 (import mansion/utils :as u)
 
+(defn must-err [exp got]
+  (string/format "Id must be %s got: %s" exp (string (type got))))
+
 (defn- _make-index [self field data]
   (string field (u/hash2hex data (self :ctx) (self :hash-count))))
 
@@ -34,11 +37,11 @@
   (:close (self :db)))
 
 (defn- _get [self id]
-  (assert (string? id))
+  (assert (string? id) (must-err "string" id))
   (-?> (:get (self :db) id) (unmarshal)))
 
 (defn- write [self batch]
-  (assert (= (type batch) :tahani/batch))
+  (assert (= (type batch) :tahani/batch) (must-err "tahani/batch" batch))
   (:write batch (self :db))
   (:destroy batch))
 
@@ -54,10 +57,10 @@
      (set id (-> (self :db) (:get "counter") (scan-number) (inc) (string)))
      (set data data-or-tuple)
      (:put (self :db) "counter" id)))
-  (assert (string? id))
-  (assert (struct? data))
+  (assert (string? id) (must-err "string" id))
+  (assert (struct? data) (must-err "sttruct" data))
   (default batch (t/batch/create))
-  (assert (= (type batch) :tahani/batch))
+  (assert (= (type batch) :tahani/batch) (must-err "tahani/batch" batch))
   (let [md (freeze (marshal data))]
     (:put batch id md)
     (each f (self :to-index)
@@ -70,18 +73,16 @@
     id))
 
 (defn- load [self id]
-  (assert (string? id))
+  (assert (string? id) (must-err "string" id))
   (:_get self id))
 
-(defn- find-by [self field term &opt populate?]
-  (assert (keyword? field))
-  (assert (string? term))
-  (assert (find |(= $ field) (self :to-index)))
-  (default populate? false)
+(defn- _by-field [self field term iter]
+  (assert (keyword? field) (must-err "keyword" field))
+  (assert (string? term) (must-err "string" term))
+  (assert (find |(= $ field) (self :to-index)) "Can only search in indexed fields") # move to init
   (def ids @[])
   (let [mf (:_make-index self field term)
         start (string mf "0")
-        iter (t/iterator/create (self :db))
         id-start (+ (length field) (* 2 (self :hash-count)))]
     (:seek iter start)
     (while (:valid? iter)
@@ -89,9 +90,32 @@
       (def k (:key iter))
       (if-let [id (and (string/has-prefix? mf k) (string/slice k id-start))]
         (array/push ids id) (break)))
-    (case populate?
-      :iter (seq [id :in ids] (:seek iter id) (unmarshal (:value iter)))
-      :load (seq [id :in ids] (:load self id))
+    ids))
+
+(defn- _all [self iter &opt limit]
+  (def counter (:get (self :db) "counter"))
+  (def l (and limit (string limit)))
+  (:seek iter counter)
+  (def ids @[(:key iter)])
+  (while (:valid? iter)
+    (:prev iter)
+    (def k (:key iter))
+    (array/push ids k)
+    (when (= k "1") (break)))
+  @[ids])
+
+# @fixme name type :all tuple struct. Opt populate? limit, iterator
+(defn- retrieve [self what &opt options]
+  (default options @{})
+  (with [iter (t/iterator/create (self :db)) |(:destroy $)] #@fixme store prop
+    (def ids
+      (cond
+       (= what :all) (:_all self iter (options :limit))
+       (struct? what)
+       (seq [[k v] :pairs what] (:_by-field self k v iter))
+       (indexed? what) (do (put options :populate? :iter) what)))
+    (if (= (options :populate?) :iter)
+      (map |(seq [id :in $] (:seek iter id) (unmarshal (:value iter))) ids)
       ids)))
 
 (def Store
@@ -105,15 +129,17 @@
     :write write
     :_create _create
     :_open _open
+    :_by-field _by-field
+    :_all _all
     :close close
     :save save
     :load load
-    :find-by find-by})
+    :retrieve retrieve})
 
 (defn create [name &opt store]
   (default store @{:to-index []})
-  (assert (string? name))
-  (assert (table? store))
+  (assert (string? name) (must-err "string" name))
+  (assert (table? store) (must-err "table" store))
   (assert (and (tuple? (store :to-index))
                (all |(keyword? $) (store :to-index))))
   (:_create
@@ -122,6 +148,6 @@
        (put :name name))))
 
 (defn open [name]
-  (assert (string? name))
+  (assert (string? name) (must-err "string" name))
   (:_open
    (-> @{} (table/setproto Store) (put :name name))))
