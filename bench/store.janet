@@ -3,7 +3,7 @@
 
 (def db-name "peoplebench")
 
-(def recs 10000)
+(def recs 100000)
 
 (defer (t/manage/destroy db-name)
   (with [s (ms/create db-name @{:to-index [:name :job :pet]})]
@@ -15,15 +15,12 @@
       (for i 0 recs (:save s {:name (string "Joker-" i) :job (if (odd? i) "Programmer" "Gardener")} batch)))
     (printf "Save records in %f" (- (os/clock) n))
     (start-clock)
-    (def ids (:find-by s :job "Programmer"))
-    (printf "Retrieve %i ids in %f" (length ids) (wall-time))
+    (def ids (:retrieve s {:job "Programmer"}))
+    (printf "Retrieve %i ids in %f" (length (ids 0)) (wall-time))
     (start-clock)
-    (def rsi (:find-by s :job "Programmer" :iter))
-    (printf "Populate %i records from iterator in %f" (length rsi) (wall-time))
+    (def rsi (:retrieve s {:job "Programmer"} {:populate? :iter}))
+    (printf "Populate %i records from iterator in %f" (length (rsi 0)) (wall-time))
     (start-clock)
-    (def rsl (:find-by s :job "Programmer" :load))
-    (printf "Populate %i records from store in %f" (length rsl) (wall-time))
-    (start-clock)
-    (def rsm (seq [id :in ids] (:load s id)))
+    (def rsm (seq [id :in (ids 0)] (:load s id)))
     (printf "Manualy retrieve %i records in %f" (length rsm) (wall-time))
 ))
