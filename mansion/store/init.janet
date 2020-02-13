@@ -45,18 +45,13 @@
   (:write batch (self :db))
   (:destroy batch))
 
-(defn- save [self data-or-tuple &opt batch]
+(defn- save [self dot &opt batch]
   (var own-batch? (not batch))
-  (var id "")
-  (var data {})
-  (if (tuple? data-or-tuple)
-    (do
-     (set id (first data-or-tuple))
-     (set data (last data-or-tuple)))
-    (do
-     (set id (-> (self :db) (:get "counter") (scan-number) (inc) (string)))
-     (set data data-or-tuple)
-     (:put (self :db) "counter" id)))
+  (def [id data]
+    (if (tuple? dot)
+      dot
+      (let [id (-> (self :db) (:get "counter") (scan-number) (inc) (string))]
+        (:put (self :db) "counter" id) [id dot])))
   (assert (string? id) (must-err "string" id))
   (assert (struct? data) (must-err "sttruct" data))
   (default batch (t/batch/create))
