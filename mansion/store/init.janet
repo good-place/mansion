@@ -2,7 +2,7 @@
 (import mansion/utils :as u)
 
 (defn must-err [exp got]
-  (string/format "Id must be %s got: %s" exp (string (type got))))
+  (string/format "must be %s got: %s" exp (string (type got))))
 
 (defn- _make-index [self field data]
   (string field (u/hash2hex data (self :ctx) (self :hash-count))))
@@ -53,7 +53,7 @@
       (let [id (-> (self :db) (:get "counter") (scan-number) (inc) (string))]
         (:put (self :db) "counter" id) [id dot])))
   (assert (string? id) (must-err "string" id))
-  (assert (struct? data) (must-err "sttruct" data))
+  (assert (struct? data) (must-err "struct" data))
   (default batch (t/batch/create))
   (assert (= (type batch) :tahani/batch) (must-err "tahani/batch" batch))
   (let [md (freeze (marshal data))]
@@ -72,7 +72,7 @@
   (:_get self id))
 
 (defn- _by-field [self field term iter]
-  (assert (keyword? field) (must-err "keyword" field))
+  (assert (or (string? field) (keyword? field)) (must-err "keyword or string" field))
   (assert (string? term) (must-err "string" term))
   (assert (find |(= $ field) (self :to-index)) "Can only search in indexed fields") # move to init
   (def ids @[])
@@ -135,8 +135,7 @@
   (default store @{:to-index []})
   (assert (string? name) (must-err "string" name))
   (assert (table? store) (must-err "table" store))
-  (assert (and (tuple? (store :to-index))
-               (all |(keyword? $) (store :to-index))))
+  (assert (tuple? (store :to-index)))
   (:_create
    (-> store
        (table/setproto Store)
