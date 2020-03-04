@@ -82,8 +82,8 @@
     (:seek iter start)
     (while (:valid? iter)
       (:next iter)
-      (def k (:key iter))
-      (if-let [id (and (string/has-prefix? mf k) (string/slice k id-start))]
+      (if-let [k (:key iter)
+               id (and (string/has-prefix? mf k) (string/slice k id-start))]
         (array/push ids id) (break)))
     ids))
 
