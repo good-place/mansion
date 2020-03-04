@@ -29,7 +29,7 @@
     (assert (array? rs) "Records are not found by retrieve")
     (assert (= (length (first rs)) 2) "Not all records are found by retrieve")
     (assert (deep= (first rs) @["1" "4"]) "Not right ids found")
-    (def rsi (:retrieve s {:name "Pepe"} {:populate? :iter}))
+    (def rsi (:retrieve s {:name "Pepe"} {:populate? true}))
     (assert (= (length (first rsi)) 2) "Not all records are found by retrieve with iterator population")
     (assert (deep= (first rsi) @[{:name "Pepe" :job "Programmer" :pet "Cat"} {:name "Pepe" :job "Gardener" :pet "Dog"}]) "Not right records found")
     (:save s ["1" {:name "Pepek" :job "Programmer" :pet "Cat"}])
@@ -38,17 +38,19 @@
     (assert (deep= (first rst) @[{:name "Pepek" :job "Programmer" :pet "Cat"} {:name "Jose" :job "Programmer" :pet "Cat"}]) "NOt right records retrieevd")
     (def rsa (:retrieve s :all @{}))
     (assert (deep= (first rsa) @["5" "4" "3" "2" "1"]) "Not right ids retrieevd")
-    (def rsai (:retrieve s :all @{:populate? :iter}))
+    (def rsai (:retrieve s :all @{:populate? true}))
     (assert (deep= (first rsai)
                    @[{:name "Joker" :job "Gardener" :pet "" :good-deeds []}
                      {:name "Pepe" :job "Gardener" :pet "Dog"}
                      {:name "Karl" :job "Gardener" :pet "Dog"}
                      {:name "Jose" :job "Programmer" :pet "Cat"}
                      {:name "Pepek" :job "Programmer" :pet "Cat"}])
-     "Not right records retrieved"))
+     "Not right records retrieved")
+    (def rsl (:retrieve s :all @{:populate? true :limit 2}))
+    (assert (= (length (first rsl)) 2) "Retrieve is not limited"))
   (with [os (ms/open db-name)]
     (assert (:load os "1") "First record is not in reopened store")
-    (def rsi (:retrieve os {:name "Pepe"} {:populate? :iter}))
+    (def rsi (:retrieve os {:name "Pepe"} {:populate? true}))
     (assert (= (length (first rsi)) 2) "Not all records are found by retrieve with iterator population")
     (assert (deep= (first rsi) @[{:name "Pepek" :job "Programmer" :pet "Cat"} {:name "Pepe" :job "Gardener" :pet "Dog"}]) "Not right records found")))
 

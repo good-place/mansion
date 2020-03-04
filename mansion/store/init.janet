@@ -88,18 +88,18 @@
     ids))
 
 (defn- _all [self iter &opt limit]
-  (def counter (:get (self :db) "counter"))
-  (def l (and limit (string limit)))
-  (:seek iter counter)
+  (var l (dec (or limit math/inf)))
+  (:seek iter (:get (self :db) "counter"))
   (def ids @[(:key iter)])
   (while (:valid? iter)
     (:prev iter)
-    (def k (:key iter))
-    (array/push ids k)
-    (when (= k "1") (break)))
+    (-= l 1)
+    (let [k (:key iter)]
+      (array/push ids k)
+      (when (or (= k "1") (zero? l)) (break))))
   @[ids])
 
-# @fixme name type :all tuple struct. Opt populate? limit, iterator
+# @fixme Opt iterator
 (defn- retrieve [self what &opt options]
   (default options @{})
   (with [iter (t/iterator/create (self :db)) |(:destroy $)] #@fixme store prop
@@ -108,8 +108,8 @@
        (= what :all) (:_all self iter (options :limit))
        (struct? what)
        (seq [[k v] :pairs what] (:_by-field self k v iter))
-       (indexed? what) (do (put options :populate? :iter) what)))
-    (if (= (options :populate?) :iter)
+       (indexed? what) (do (put options :populate? true) what)))
+    (if (options :populate?)
       (map |(seq [id :in $] (:seek iter id) (unmarshal (:value iter))) ids)
       ids)))
 
@@ -135,7 +135,7 @@
   (default store @{:to-index []})
   (assert (string? name) (must-err "string" name))
   (assert (table? store) (must-err "table" store))
-  (assert (tuple? (store :to-index)))
+  (assert (tuple? (store :to-index)) (must-err "tuple" (store :to-index)))
   (:_create
    (-> store
        (table/setproto Store)
