@@ -5,18 +5,18 @@
   (string/format "must be %s got: %s" exp (string (type got))))
 
 (defn- _make-index [self field data]
-  (string field (u/hash2hex data (self :ctx) (self :hash-count))))
+  (string field (u/hash2hex data (self :ctx) (self :hash-size))))
 
 (defn- _create [self]
   (put self :db (t/open (self :name) :eie))
   (def batch (t/batch/create))
-  (:put batch "hash-count" (string (marshal (self :hash-count))))
+  (:put batch "hash-size" (string (marshal (self :hash-size))))
   (:put batch "to-index" (string (marshal (self :to-index))))
   (:put batch "ctx" (self :ctx))
   (:put batch "counter" "0")
   (loop [i :in (self :to-index)]
     (:put batch
-          (string i (string/repeat "0" (+ (* (self :hash-count) 2) 1)))
+          (string i (string/repeat "0" (+ (* (self :hash-size) 2) 1)))
            "\0"))
   (:write self batch)
   (:destroy batch)
@@ -26,7 +26,7 @@
   (def db (t/open (self :name)))
   (put self :db db)
   (def batch (t/batch/create))
-  (put self :hash-count (unmarshal (:get db "hash-count")))
+  (put self :hash-size (unmarshal (:get db "hash-size")))
   (put self :to-index (unmarshal (:get db "to-index")))
   (put self :ctx (:get db "ctx"))
   (:write self batch)
@@ -78,7 +78,7 @@
   (def ids @[])
   (let [mf (:_make-index self field term)
         start (string mf "0")
-        id-start (+ (length field) (* 2 (self :hash-count)))]
+        id-start (+ (length field) (* 2 (self :hash-size)))]
     (:seek iter start)
     (while (:valid? iter)
       (:next iter)
@@ -117,16 +117,16 @@
   @{:name nil
     :to-index nil
     :ctx "-tahani-"
-    :hash-count 16
+    :hash-size 16
     :_db nil
     :_make-index _make-index
     :_get _get
-    :write write
     :_create _create
     :_open _open
     :_by-field _by-field
     :_all _all
     :close close
+    :write write
     :save save
     :load load
     :retrieve retrieve})
