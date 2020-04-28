@@ -10,6 +10,9 @@
 (def db-name "peopletest")
 
 (defer (t/manage/destroy db-name)
+  (assert-error "Can open non existent DB" (ms/open db-name)))
+
+(defer (t/manage/destroy db-name)
   (with [s (ms/create db-name @{:to-index [:name :job :pet]})]
     (assert s "Store is not created")
     (def id (:save s {:name "Pepe" :job "Programmer" :pet "Cat"}))

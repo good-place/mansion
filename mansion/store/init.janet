@@ -23,7 +23,7 @@
   self)
 
 (defn- _open [self]
-  (def db (t/open (self :name)))
+  (def db (t/open (self :name) :eim))
   (put self :db db)
   (def batch (t/batch/create))
   (put self :hash-size (unmarshal (:get db "hash-size")))
