@@ -15,6 +15,7 @@
 (defer (t/manage/destroy db-name)
   (with [s (ms/create db-name @{:to-index [:name :job :pet]})]
     (assert s "Store is not created")
+    (assert (deep= (:retrieve s :all) @[@[]]) "Store is not empty")
     (def id (:save s {:name "Pepe" :job "Programmer" :pet "Cat"}))
     (assert id "Record is not saved")
     (assert (string? id) "Record id is not string")

@@ -93,10 +93,15 @@
   (def ids @[(:key iter)])
   (while (:valid? iter)
     (:prev iter)
-    (-= l 1)
-    (let [k (:key iter)]
-      (array/push ids k)
-      (when (or (= k "1") (zero? l)) (break))))
+    (if (not (:valid? iter))
+      (do
+        (array/remove ids 0)
+        (break)))
+      (do
+        (-= l 1)
+        (let [k (:key iter)]
+          (array/push ids k)
+          (when (or (= k "1") (zero? l)) (break)))))
   @[ids])
 
 # @fixme Opt iterator
