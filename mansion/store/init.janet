@@ -107,6 +107,7 @@
 # @fixme Opt iterator
 (defn- retrieve [self what &opt options]
   (default options @{})
+  (when (options :id?) (put options :populate? true))
   (with [iter (t/iterator/create (self :db)) |(:destroy $)] #@fixme store prop
     (def ids
       (cond
@@ -115,7 +116,10 @@
        (seq [[k v] :pairs what] (:_by-field self k v iter))
        (indexed? what) (do (put options :populate? true) what)))
     (if (options :populate?)
-      (map |(seq [id :in $] (:seek iter id) (unmarshal (:value iter))) ids)
+      (map |(seq [id :in $]
+              (:seek iter id)
+              (def v (unmarshal (:value iter)))
+              (if (options :id?) @[id v] v)) ids)
       ids)))
 
 (def Store
