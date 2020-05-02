@@ -33,12 +33,12 @@
   v)
 
 (defn- close [self]
+  (each v (self :visitors) (:close v))
+  (put self :visitors @[])
   (loop [[name server] :pairs (self :servers)]
     (:close (server :instance))
     (:close (server :store)))
   (put self :servers @{})
-  (each v (self :visitors) (:close v))
-  (put self :visitors @[])
   self)
 
 (def Reception
