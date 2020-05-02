@@ -2,6 +2,7 @@
   :name "mansion"
   :description "Place for tahani"
   :dependencies ["https://github.com/janet-lang/jhydro.git"
+                 "https://github.com/janet-lang/spork.git"
                  "https://github.com/pepe/tahani"])
 
 (declare-source
