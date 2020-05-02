@@ -10,27 +10,27 @@
 (defn- _create [self]
   (put self :db (t/open (self :name) :eie))
   (def batch (t/batch/create))
-  (:put batch "hash-size" (string (marshal (self :hash-size))))
-  (:put batch "to-index" (string (marshal (self :to-index))))
-  (:put batch "ctx" (self :ctx))
-  (:put batch "counter" "0")
-  (loop [i :in (self :to-index)]
-    (:put batch
-          (string i (string/repeat "0" (+ (* (self :hash-size) 2) 1)))
-           "\0"))
-  (:write self batch)
-  (:destroy batch)
+  (defer (:destroy batch)
+    (:put batch "hash-size" (string (marshal (self :hash-size))))
+    (:put batch "to-index" (string (marshal (self :to-index))))
+    (:put batch "ctx" (self :ctx))
+    (:put batch "counter" "0")
+    (loop [i :in (self :to-index)]
+      (:put batch
+            (string i (string/repeat "0" (+ (* (self :hash-size) 2) 1)))
+             "\0"))
+    (:write self batch))
   self)
 
 (defn- _open [self]
   (def db (t/open (self :name) :eim))
   (put self :db db)
   (def batch (t/batch/create))
-  (put self :hash-size (unmarshal (:get db "hash-size")))
-  (put self :to-index (unmarshal (:get db "to-index")))
-  (put self :ctx (:get db "ctx"))
-  (:write self batch)
-  (:destroy batch)
+  (defer (:destroy batch)
+    (put self :hash-size (unmarshal (:get db "hash-size")))
+    (put self :to-index (unmarshal (:get db "to-index")))
+    (put self :ctx (:get db "ctx"))
+    (:write self batch))
   self)
 
 (defn- close [self]
@@ -42,16 +42,15 @@
 
 (defn- write [self batch]
   (assert (= (type batch) :tahani/batch) (must-err "tahani/batch" batch))
-  (:write batch (self :db))
-  (:destroy batch))
+  (defer (:destroy batch) (:write batch (self :db))))
 
 (defn- save [self dot &opt batch]
   (var own-batch? (not batch))
   (def [id data]
     (if (tuple? dot)
       dot
-      (let [id (-> (self :db) (:get "counter") (scan-number) (inc) (string))]
-        (:put (self :db) "counter" id) [id dot])))
+      (let [id (-> :db self (:get "counter") scan-number inc string)]
+        (-> :db self (:put "counter" id)) [id dot])))
   (assert (string? id) (must-err "string" id))
   (assert (struct? data) (must-err "struct" data))
   (default batch (t/batch/create))
@@ -64,7 +63,9 @@
               start (string mf "0")]
           (unless (:get (self :db) start) (:put batch start d))
           (:put batch (string mf id) "\0"))))
-    (when own-batch? (:write self batch))
+    (when own-batch?
+      (:write self batch)
+      (:destroy batch))
     id))
 
 (defn- load [self id]
@@ -89,19 +90,18 @@
 
 (defn- _all [self iter &opt limit]
   (var l (dec (or limit math/inf)))
-  (:seek iter (:get (self :db) "counter"))
-  (def ids @[(:key iter)])
-  (while (:valid? iter)
+  (def counter (:get (self :db) "counter"))
+  (def ids @[])
+  (when (not (= counter "0"))
+    (:seek iter counter)
+    (array/push ids (:key iter))
     (:prev iter)
-    (if (not (:valid? iter))
-      (do
-        (array/remove ids 0)
-        (break)))
-      (do
-        (-= l 1)
-        (let [k (:key iter)]
-          (array/push ids k)
-          (when (or (= k "1") (zero? l)) (break)))))
+    (while (:valid? iter)
+      (-= l 1)
+      (let [k (:key iter)]
+        (array/push ids k)
+        (when (or (= k "1") (zero? l)) (break)))
+      (:prev iter)))
   @[ids])
 
 # @fixme Opt iterator

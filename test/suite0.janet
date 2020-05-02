@@ -24,6 +24,9 @@
     (assert r "Record is not loaded")
     (assert (struct? r) "Record is not struct")
     (assert (= (r :name) "Pepe") "Record has bad name")
+    (def rr (:retrieve s :all @{:id? true}))
+    (assert rr "Record is not retrieved")
+    (assert (deep= rr @[@[@["1" {:name "Pepe" :job "Programmer" :pet "Cat"}]]]) "Not right record is retrieved")
     (with [batch (t/batch/create) |(:write s $)]
       (:save s {:name "Jose" :job "Programmer" :pet "Cat"} batch)
       (:save s {:name "Karl" :job "Gardener" :pet "Dog"} batch)

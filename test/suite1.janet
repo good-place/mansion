@@ -8,12 +8,22 @@
 
 (start-suite 1)
 
-# (def db-name "peopletest")
-#
-# (defer (t/manage/destroy db-name)
-#   (:close (ms/create db-name @{:to-index [:name :job :pet]}))
-#   (def r (mr/server db-name))
-#   (pp r)
-#   (:close r))
+(def names ["peopletest" "commentstest"])
+
+(defer (each name names (t/manage/destroy name))
+  (each name names (:close (ms/create name @{:to-index ["name"]})))
+  (def r (mr/open names))
+  (assert r "Reception cannot be opened")
+  (assert-no-error "Reception cannot be ran" (:run r))
+  (def visitor (:visit r "peopletest" "pp"))
+  (assert visitor "Visitor was not created")
+  (assert (= 48 (:load visitor "counter")) "Counter is not zero")
+  (def i (:save visitor {"name" "pepe"}))
+  (assert (= i "1") "Bad id generated")
+  (assert (deep= (:load visitor i) {"name" "pepe"}) "Bad record is loaded")
+  (assert (deep= (:retrieve visitor) @[@[@["1" {"name" "pepe"}]]]) "Bad records are retrieved")
+  (:save visitor {"name" "vasa"})
+  (assert (deep= (:retrieve visitor) @[@[@["2" {"name" "vasa"}] @["1"{"name" "pepe"}]]]) "Bad records are retrieved")
+  (:close r))
 
 (end-suite)
