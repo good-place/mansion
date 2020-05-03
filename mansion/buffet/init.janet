@@ -108,7 +108,7 @@
 (defn- retrieve [self what &opt options]
   (default options @{})
   (when (options :id?) (put options :populate? true))
-  (with [iter (t/iterator/create (self :db)) |(:destroy $)] #@fixme store prop
+  (with [iter (t/iterator/create (self :db)) |(:destroy $)] #@fixme buffet prop
     (def ids
       (cond
        (= what :all) (:_all self iter (options :limit))
@@ -122,7 +122,7 @@
               (if (options :id?) @[id v] v)) ids)
       ids)))
 
-(def Store
+(def Buffet
   @{:name nil
     :to-index nil
     :ctx "-tahani-"
@@ -140,17 +140,17 @@
     :load load
     :retrieve retrieve})
 
-(defn create [name &opt store]
-  (default store @{:to-index []})
+(defn create [name &opt buffet]
+  (default buffet @{:to-index []})
   (assert (string? name) (must-err "string" name))
-  (assert (table? store) (must-err "table" store))
-  (assert (tuple? (store :to-index)) (must-err "tuple" (store :to-index)))
+  (assert (table? buffet) (must-err "table" buffet))
+  (assert (tuple? (buffet :to-index)) (must-err "tuple" (buffet :to-index)))
   (:_create
-   (-> store
-       (table/setproto Store)
+   (-> buffet
+       (table/setproto Buffet)
        (put :name name))))
 
 (defn open [name]
   (assert (string? name) (must-err "string" name))
   (:_open
-   (-> @{} (table/setproto Store) (put :name name))))
+   (-> @{} (table/setproto Buffet) (put :name name))))

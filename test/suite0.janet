@@ -2,7 +2,7 @@
 
 (import tahani :as t)
 
-(import ../mansion/store :as ms)
+(import ../mansion/buffet :as mb)
 (import ../mansion/utils :as mu)
 
 (start-suite 0)
@@ -10,10 +10,10 @@
 (def db-name "peopletest")
 
 (defer (t/manage/destroy db-name)
-  (assert-error "Can open non existent DB" (ms/open db-name)))
+  (assert-error "Can open non existent DB" (mb/open db-name)))
 
 (defer (t/manage/destroy db-name)
-  (with [s (ms/create db-name @{:to-index [:name :job :pet]})]
+  (with [s (mb/create db-name @{:to-index [:name :job :pet]})]
     (assert s "Store is not created")
     (assert (deep= (:retrieve s :all) @[@[]]) "Store is not empty")
     (def id (:save s {:name "Pepe" :job "Programmer" :pet "Cat"}))
@@ -58,8 +58,8 @@
      "Not right records retrieved")
     (def rsl (:retrieve s :all @{:populate? true :limit 2}))
     (assert (= (length (first rsl)) 2) "Retrieve is not limited"))
-  (with [os (ms/open db-name)]
-    (assert (:load os "1") "First record is not in reopened store")
+  (with [os (mb/open db-name)]
+    (assert (:load os "1") "First record is not in reopened buffet")
     (def rsi (:retrieve os {:name "Pepe"} {:populate? true}))
     (assert (= (length (first rsi)) 2) "Not all records are found by retrieve with iterator population")
     (assert (deep= (first rsi) @[{:name "Pepek" :job "Programmer" :pet "Cat"} {:name "Pepe" :job "Gardener" :pet "Dog"}]) "Not right records found")))
