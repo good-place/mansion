@@ -45,7 +45,7 @@
     (:save s ["1" {:name "Pepek" :job "Programmer" :pet "Cat"}])
     (assert (= ((:load s "1") :name) "Pepek") "Record not updated")
     (def rst (:retrieve s @[@["1" "2"]]))
-    (assert (deep= (first rst) @[{:name "Pepek" :job "Programmer" :pet "Cat"} {:name "Jose" :job "Programmer" :pet "Cat"}]) "NOt right records retrieevd")
+    (assert (deep= (first rst) @[{:name "Pepek" :job "Programmer" :pet "Cat"} {:name "Jose" :job "Programmer" :pet "Cat"}]) "Not right records are retrieved")
     (def rsa (:retrieve s :all))
     (assert (deep= (first rsa) @["5" "4" "3" "2" "1"]) "Not right ids retrieevd")
     (def rsai (:retrieve s :all @{:populate? true}))
