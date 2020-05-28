@@ -20,9 +20,19 @@
                                  :port (self :current-port)})
   (:_inc-port self))
 
+(defn- start-operator [self]
+  (def fns
+    {:call (fn [self]
+             (-> {:host (self :host)
+                  :port (self :host)
+                  :servers (map |({:port ($ :port)}) (self :servers))}))})
+  (put self :operator (rpc/server fns (self :host) (self :current-port)))
+  (:_inc-port self))
+
 (defn- run [self]
+  (:_start-operator self)
   (each s (self :buffets)
-        (:_add-server self s))
+    (:_add-server self s))
   self)
 
 (defn- visit [self name visitor]
@@ -47,11 +57,13 @@
     :visitors @[]
     :host "localhost"
     :current-port 9000
+    :operator nil
     :run run
     :visit visit
     :close close
     :_add-server add-server
-    :_inc-port inc-port})
+    :_inc-port inc-port
+    :_start-operator start-operator})
 
 (defn open [buffets &opt port host]
   (assert (indexed? buffets) (string "Stores must be an indexed collection"))
