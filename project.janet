@@ -6,8 +6,8 @@
                  "https://github.com/pepe/tahani"])
 
 (declare-source
- :name "mansion"
- :source @["mansion/"])
+  :name "mansion"
+  :source @["mansion/"])
 
 # run repl with tahani included
 (phony "repl" ["build"] (os/execute ["janet" "-r" "-e" "(import mansion :as m)"] :p))
