@@ -38,7 +38,7 @@
     :server nil
     :visitors @[]
     :host "localhost"
-    :current-port 9000
+    :port 9000
     :operator nil
     :run run
     :visit visit
@@ -49,10 +49,10 @@
   (assert (indexed? buffets) (string "Stores must be an indexed collection"))
   (default host "localhost")
   (default port 9000)
-  (var current-port (if (string? port) (scan-number port) port))
+  (var port (if (string? port) (scan-number port) port))
   (assert (number? port) (string "Port must be a nunber or string, got " (type port)))
   (def reception @{:buffets buffets
                    :host host
-                   :current-port current-port})
+                   :port port})
   (table/setproto reception Reception)
   reception)
