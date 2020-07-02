@@ -55,7 +55,7 @@
                      {:name "Karl" :job "Gardener" :pet "Dog"}
                      {:name "Jose" :job "Programmer" :pet "Cat"}
                      {:name "Pepek" :job "Programmer" :pet "Cat"}])
-     "Not right records retrieved")
+            "Not right records retrieved")
     (def rsl (:retrieve s :all @{:populate? true :limit 2}))
     (assert (= (length (first rsl)) 2) "Retrieve is not limited"))
   (with [os (mb/open db-name)]
@@ -65,4 +65,3 @@
     (assert (deep= (first rsi) @[{:name "Pepek" :job "Programmer" :pet "Cat"} {:name "Pepe" :job "Gardener" :pet "Dog"}]) "Not right records found")))
 
 (end-suite)
-

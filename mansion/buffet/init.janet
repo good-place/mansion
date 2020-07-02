@@ -1,3 +1,4 @@
+# @fixme: where are all the docs?
 (import tahani :as t)
 (import mansion/utils :as u)
 
@@ -18,7 +19,7 @@
     (loop [i :in (self :to-index)]
       (:put batch
             (string i (string/repeat "0" (+ (* (self :hash-size) 2) 1)))
-             "\0"))
+            "\0"))
     (:write self batch))
   self)
 
@@ -111,10 +112,11 @@
   (with [iter (t/iterator/create (self :db)) |(:destroy $)] #@fixme buffet prop
     (def ids
       (cond
-       (= what :all) (:_all self iter (options :limit))
-       (struct? what)
-       (seq [[k v] :pairs what] (:_by-field self k v iter))
-       (indexed? what) (do (put options :populate? true) what)))
+        (= what :all) (:_all self iter (options :limit))
+        (struct? what)
+        (seq [[k v] :pairs what] (:_by-field self k v iter))
+        (indexed? what) (do (put options :populate? true) what)
+        (error "Unknow type of what")))
     (if (options :populate?)
       (map |(seq [id :in $]
               (:seek iter id)
@@ -146,11 +148,11 @@
   (assert (table? buffet) (must-err "table" buffet))
   (assert (tuple? (buffet :to-index)) (must-err "tuple" (buffet :to-index)))
   (:_create
-   (-> buffet
-       (table/setproto Buffet)
-       (put :name name))))
+    (-> buffet
+        (table/setproto Buffet)
+        (put :name name))))
 
 (defn open [name]
   (assert (string? name) (must-err "string" name))
   (:_open
-   (-> @{} (table/setproto Buffet) (put :name name))))
+    (-> @{} (table/setproto Buffet) (put :name name))))
