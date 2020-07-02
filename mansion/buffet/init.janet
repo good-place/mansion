@@ -81,12 +81,12 @@
   (let [mf (:_make-index self field term)
         start (string mf "0")
         id-start (+ (length field) (* 2 (self :hash-size)))]
-    (:seek iter start)
+    (:next (:seek iter start))
     (while (:valid? iter)
-      (:next iter)
       (if-let [k (:key iter)
                id (and (string/has-prefix? mf k) (string/slice k id-start))]
-        (array/push ids id) (break)))
+        (array/push ids id) (break))
+      (:next iter))
     ids))
 
 (defn- _all [self iter &opt limit]
