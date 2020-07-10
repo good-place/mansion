@@ -47,8 +47,9 @@
 
 (defn- save [self dot &opt batch]
   (var own-batch? (not batch))
+  (def old (and (tuple? dot) (:load self (first dot))))
   (def [id data]
-    (if (tuple? dot)
+    (if old
       dot
       (let [id (-> :db self (:get "counter") scan-number inc string)]
         (-> :db self (:put "counter" id)) [id dot])))
@@ -59,6 +60,10 @@
   (let [md (freeze (marshal data))]
     (:put batch id md)
     (each f (self :to-index)
+      (when-let [d (get old f)]
+        (let [mf (:_make-index self f d)
+              start (string mf "0")]
+          (:delete batch (string mf id))))
       (when-let [d (get data f)]
         (let [mf (:_make-index self f d)
               start (string mf "0")]
@@ -81,12 +86,14 @@
   (let [mf (:_make-index self field term)
         start (string mf "0")
         id-start (+ (length field) (* 2 (self :hash-size)))]
-    (:next (:seek iter start))
-    (while (:valid? iter)
-      (if-let [k (:key iter)
-               id (and (string/has-prefix? mf k) (string/slice k id-start))]
-        (array/push ids id) (break))
-      (:next iter))
+    (:seek iter start)
+    (when (:valid? iter)
+      (:next iter)
+      (while (:valid? iter)
+        (if-let [k (:key iter)
+                 id (and (string/has-prefix? mf k) (string/slice k id-start))]
+          (array/push ids id) (break))
+        (:next iter)))
     ids))
 
 (defn- _all [self iter &opt limit]

@@ -14,5 +14,5 @@
   (while (not= 1 (length sets))
     (let [head (first sets)
           aset (array/pop sets)]
-     (put sets 0 (filter (fn [i] (find-index |(= i $) aset)) head))))
+      (put sets 0 (filter (fn [i] (find-index |(deep= i $) aset)) head))))
   (first sets))
