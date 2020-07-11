@@ -57,11 +57,17 @@
                      {:name "Pepek" :job "Programmer" :pet "Cat"}])
             "Not right records retrieved")
     (def rsl (:retrieve s :all @{:populate? true :limit 2}))
-    (assert (= (length (first rsl)) 2) "Retrieve is not limited"))
+    (assert (= (length (first rsl)) 2) "Retrieve is not limited")
+    (def r (:load s "5"))
+    (def nr (-> r
+                (merge {:name "Rocker"})
+                freeze))
+    (:save s ["5" nr])
+    (assert (empty? (first (:retrieve s {:name "Joker"}))) "Still can find with old index"))
   (with [os (mb/open db-name)]
     (assert (:load os "1") "First record is not in reopened buffet")
-    (def rsi (:retrieve os {:name "Pepe"} {:populate? true}))
-    (assert (= (length (first rsi)) 2) "Not all records are found by retrieve with iterator population")
-    (assert (deep= (first rsi) @[{:name "Pepek" :job "Programmer" :pet "Cat"} {:name "Pepe" :job "Gardener" :pet "Dog"}]) "Not right records found")))
+    (def rsi (:retrieve os {:name "Pepe"} @{:id? true}))
+    (assert (= (length (first rsi)) 1) "Not all records are found by retrieve with iterator population")
+    (assert (deep= (first rsi) @[@["4" {:name "Pepe" :job "Gardener" :pet "Dog"}]]) "Not right records found")))
 
 (end-suite)
