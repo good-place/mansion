@@ -60,6 +60,7 @@
   (let [md (freeze (marshal data))]
     (:put batch id md)
     (each f (self :to-index)
+      # @fisme only re-index when not the same
       (when-let [d (get old f)]
         (let [mf (:_make-index self f d)
               start (string mf "0")]
@@ -73,6 +74,8 @@
       (:write self batch)
       (:destroy batch))
     id))
+
+# @todo reindex
 
 (defn- load [self id]
   (assert (string? id) (must-err "string" id))
