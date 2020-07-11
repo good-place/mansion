@@ -60,16 +60,18 @@
   (let [md (freeze (marshal data))]
     (:put batch id md)
     (each f (self :to-index)
-      # @fisme only re-index when not the same
-      (when-let [d (get old f)]
-        (let [mf (:_make-index self f d)
-              start (string mf "0")]
-          (:delete batch (string mf id))))
-      (when-let [d (get data f)]
-        (let [mf (:_make-index self f d)
-              start (string mf "0")]
-          (unless (:get (self :db) start) (:put batch start d))
-          (:put batch (string mf id) "\0"))))
+      (def od (get old f))
+      (def nd (get data f))
+      (when (not (= od nd))
+        (when od
+          (let [mf (:_make-index self f od)
+                start (string mf "0")]
+            (:delete batch (string mf id))))
+        (when nd
+          (let [mf (:_make-index self f nd)
+                start (string mf "0")]
+            (unless (:get (self :db) start) (:put batch start nd))
+            (:put batch (string mf id) "\0")))))
     (when own-batch?
       (:write self batch)
       (:destroy batch))
