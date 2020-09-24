@@ -24,10 +24,6 @@
   (assert (deep= (:retrieve v "peopletest") @[@[@["1" {"name" "pepe"}]]]) "Bad records are retrieved")
   (:save v "peopletest" {"name" "vasa"})
   (assert (deep= (:retrieve v "peopletest") @[@[@["2" {"name" "vasa"}] @["1" {"name" "pepe"}]]]) "Bad records are retrieved")
-  # remote reception
-  (def rr (mr/open names))
-  (def rv (:visit rr "rpp"))
-  (assert rv "Visitor was not created")
   (:close r))
 
 (end-suite)
