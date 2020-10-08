@@ -27,10 +27,12 @@
   v)
 
 (defn- close [self]
-  (eachp [_ b] (self :open-buffets) (:close b))
   (each v (self :visitors) (:close v))
   (put self :visitors @[])
+  (each b (values (self :open-buffets)) (:close b))
+  (put self :open-buffets @{})
   (:close (self :server))
+  (put self :server nil)
   self)
 
 (def Reception

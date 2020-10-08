@@ -16,6 +16,7 @@
   (assert r "Reception cannot be opened")
   (assert-no-error "Reception cannot be ran" (:run r))
   (def v (:visit r "pp"))
+  # (def v (:visit r "peopletest" "pp")) @todo issue on Janet
   (assert v "Visitor was not created")
   (assert (= 48 (:load v "peopletest" "counter")) "Counter is not zero")
   (def i (:save v "peopletest" {"name" "pepe"}))
