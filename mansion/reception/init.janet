@@ -29,7 +29,7 @@
 (defn- close [self]
   (each v (self :visitors) (:close v))
   (put self :visitors @[])
-  (each b (values (self :open-buffets)) (:close b))
+  (each b (self :open-buffets) (:close b))
   (put self :open-buffets @{})
   (:close (self :server))
   (put self :server nil)
