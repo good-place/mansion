@@ -3,7 +3,8 @@
 
 (defn- add-buffet [self name]
   (def buffet (mb/open name))
-  (put-in self [:open-buffets name] buffet))
+  (put-in self [:open-buffets name] buffet)
+  self)
 
 (defn- run [self]
   (each s (self :buffets) (:_add-buffet self s))
@@ -33,7 +34,8 @@
   self)
 
 (def Reception
-  @{:buffets []
+  @{:server nil
+    :buffets []
     :open-buffets @{}
     :server nil
     :visitors @[]
